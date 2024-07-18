@@ -3,7 +3,6 @@ import 'package:ori/consts/const.dart';
 import 'package:youtube_api/youtube_api.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-
 class CheckPage extends StatefulWidget {
   const CheckPage({super.key});
 
@@ -12,10 +11,6 @@ class CheckPage extends StatefulWidget {
 }
 
 class _CheckPageState extends State<CheckPage> {
-  String prompt='$w origami tutorials';
-  YoutubeAPI yt = YoutubeAPI(dotenv.env['token'].toString(), maxResults: 6, type: "video");
-
-  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -45,35 +40,34 @@ class _CheckPageState extends State<CheckPage> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
-                        decoration:const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.all(Radius.circular(30))
-                        ),
-                        child: TextButton(
-                          onPressed: ()async{
-                            try {
-                                results = await yt.search(prompt);
-                            } catch (e) {
-                                print(e);
-                             }
-                            Navigator.of(context).pushNamedAndRemoveUntil('/final/', (route) => false);
-                          }, 
-                          child: Text('Yes'))
-                      ),
+                          decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30))),
+                          child: TextButton(
+                              onPressed: () async {
+                                if (w == 'Not Origami') {
+                                  Navigator.of(context).pushNamedAndRemoveUntil(
+                                      '/home/', (route) => false);
+                                }
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/select/', (route) => false);
+                              },
+                              child: Text('Yes'))),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
-                        decoration:const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.all(Radius.circular(30))
-                        ),
-                        child: TextButton(
-                          onPressed: (){
-                            Navigator.of(context).pushNamedAndRemoveUntil('/home/', (route) => false);
-                          }, 
-                          child: const Text('No'))
-                      ),
+                          decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30))),
+                          child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/home/', (route) => false);
+                              },
+                              child: const Text('No'))),
                     ),
                   ],
                 )
@@ -85,4 +79,3 @@ class _CheckPageState extends State<CheckPage> {
     );
   }
 }
-

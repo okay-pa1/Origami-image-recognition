@@ -12,18 +12,17 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   bool _isPlayerReady = false;
   late YoutubePlayerController _controller;
-  
 
   @override
   void initState() {
     super.initState();
     _controller = YoutubePlayerController(
-    initialVideoId: results[mainindex].id.toString(),
-    flags: const YoutubePlayerFlags(
+      initialVideoId: results[mainindex].id.toString(),
+      flags: const YoutubePlayerFlags(
         autoPlay: false,
         mute: true,
-    ),
-  )..addListener((listener));
+      ),
+    )..addListener((listener));
   }
 
   void listener() {
@@ -57,37 +56,40 @@ class _PlayerState extends State<Player> {
           showVideoProgressIndicator: true,
           progressIndicatorColor: Colors.blueAccent,
           onReady: () {
-              _controller.addListener(listener);
-            },
+            _controller.addListener(listener);
+          },
         ),
-        builder: (context,player)=>
-          Scaffold(
-            body: Column(
-              children: [
-                player,
-                SizedBox(height: 20,),
-                Text(
-                  results[mainindex].title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold
-                  ),
-                ),
-                Text(results[mainindex].description.toString(),
-                style: TextStyle(
-                  fontStyle: FontStyle.italic
-                ),
-                ),
-                IconButton(onPressed: (){
-                  Navigator.of(context).pushNamedAndRemoveUntil('/home/', (route) => false);
-                }, icon: Icon(Icons.home)),
-                IconButton(onPressed: (){
-                  Navigator.of(context).pushNamedAndRemoveUntil('/final/', (route) => false);
-                }, icon: Icon(Icons.arrow_back))
-
-              ],
-            ),
+        builder: (context, player) => Scaffold(
+          body: Column(
+            children: [
+              player,
+              SizedBox(
+                height: 20,
+              ),
+              Text(
+                results[mainindex].title,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                results[mainindex].description.toString(),
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+              IconButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/home/', (route) => false);
+                  },
+                  icon: Icon(Icons.home)),
+              IconButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/final/', (route) => false);
+                  },
+                  icon: Icon(Icons.arrow_back))
+            ],
           ),
+        ),
       ),
     );
   }

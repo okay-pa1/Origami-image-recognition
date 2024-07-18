@@ -1,5 +1,5 @@
 Boat
-Fish
-Plane
+Butterfly
 Frog
 Swan
+Not Origami

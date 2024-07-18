@@ -9,20 +9,23 @@ import 'package:ori/final.dart';
 import 'package:lottie/lottie.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:ori/player.dart';
+import 'package:ori/select.dart';
+import 'package:ori/textSugg.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:permission_handler/permission_handler.dart';
 
- 
-class MyHttpOverrides extends HttpOverrides{
+class MyHttpOverrides extends HttpOverrides {
   @override
-  HttpClient createHttpClient(SecurityContext? context){
+  HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
 
-Future<void> main()async { 
-   HttpOverrides.global = MyHttpOverrides();
+Future<void> main() async {
+  HttpOverrides.global = MyHttpOverrides();
   await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized;
   await dotenv.load();
@@ -34,13 +37,14 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSplashScreen(splash: Lottie.asset('assets/swan.json'),
+    return AnimatedSplashScreen(
+        splash: Lottie.asset('assets/swan.json'),
         backgroundColor: Colors.transparent,
         nextScreen: const HomePage(),
-      splashIconSize: 300,
-      duration: 2000,
-      splashTransition: SplashTransition.fadeTransition,
-      pageTransitionType: PageTransitionType.leftToRightWithFade);
+        splashIconSize: 300,
+        duration: 2000,
+        splashTransition: SplashTransition.fadeTransition,
+        pageTransitionType: PageTransitionType.leftToRightWithFade);
   }
 }
 
@@ -59,10 +63,12 @@ class MyApp extends StatelessWidget {
       ),
       home: const SplashScreen(),
       routes: {
+        '/textsug/': (context) => const TextSuggestion(),
+        '/select/': (context) => const ChooseOption(),
         '/check/': (context) => const CheckPage(),
-        '/home/':(context) => const HomePage(),
-        '/final/':(context) => const FinalPage(),
-        '/player/':(context) => const Player()
+        '/home/': (context) => const HomePage(),
+        '/final/': (context) => const FinalPage(),
+        '/player/': (context) => const Player()
       },
     );
   }
@@ -76,26 +82,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-
-  
   @override
   void initState() {
     super.initState();
-    image=File('/assets/6.jpg');
+    image = File('/assets/6.jpg');
     loadmodel();
   }
+
   @override
-  void dispose(){
+  void dispose() {
     super.dispose();
   }
 
-  loadmodel(){
-    Tflite.loadModel(model: 'assets/model_unquant.tflite',labels: 'assets/labels.txt');
+  loadmodel() {
+    Tflite.loadModel(
+        model: 'assets/model_unquant.tflite', labels: 'assets/labels.txt');
   }
 
-  classify(File image)async{
-    var output=await Tflite.runModelOnImage(
+  classify(File image) async {
+    var output = await Tflite.runModelOnImage(
       path: image.path,
       numResults: 2,
       threshold: 0.5,
@@ -105,13 +110,34 @@ class _HomePageState extends State<HomePage> {
     return output;
   }
 
-  Future<File?> getimg()async {
+  Future<File?> getimg() async {
     return image;
   }
 
-  pick(ImageSource src)async{
-    var img=await ImagePicker().pickImage(source: src);
-    image=File(img!.path);
+  pickCamera() async {
+    PermissionStatus cameraPermissionStatus = await Permission.camera.status;
+    // PermissionStatus storagePermissionStatus = await Permission.storage.status;
+    if (cameraPermissionStatus.isGranted) {
+      var img = await ImagePicker().pickImage(source: ImageSource.camera);
+      image = File(img!.path);
+      return image;
+    } else {
+      Map<Permission, PermissionStatus> permissionStatuses = await [
+        Permission.camera,
+      ].request();
+      if (permissionStatuses[Permission.camera]!.isGranted) {
+        var img = await ImagePicker().pickImage(source: ImageSource.camera);
+        image = File(img!.path);
+        return image;
+      } else {
+        print("Please allow permissions to capture and store image");
+      }
+    }
+  }
+
+  pickGallery() async {
+    var img = await ImagePicker().pickImage(source: ImageSource.gallery);
+    image = File(img!.path);
     return image;
   }
 
@@ -119,8 +145,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        image: DecorationImage(image: AssetImage('assets/bg.jpg'),fit: BoxFit.cover)
-      ),
+          image: DecorationImage(
+              image: AssetImage('assets/bg.jpg'), fit: BoxFit.cover)),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
@@ -129,60 +155,77 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20,20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: InkWell(
                   borderRadius: BorderRadius.all(Radius.circular(30)),
-                  onTap: ()async{
-                    var img=await pick(ImageSource.camera);
-                var output=await classify(img);
-                setState(() {
-                  w=output[0]["label"].toString();
-                });
-                Navigator.of(context).pushNamedAndRemoveUntil('/check/', (route) => false);
+                  onTap: () async {
+                    var img = await pickCamera();
+                    var output = await classify(img);
+                    setState(() {
+                      w = output[0]["label"].toString();
+                      for (int i = 0; i < labels.length; i++) {
+                        if (w == labels[i]) {
+                          contentIndex = i;
+                        }
+                      }
+                      print(contentIndex);
+                    });
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/check/', (route) => false);
                   },
                   child: Container(
-                    decoration: BoxDecoration(
-                       color: Colors.grey.shade100.withOpacity(0.5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100.withOpacity(0.5),
                         borderRadius: BorderRadius.all(Radius.circular(30)),
-                    ),
-                    height: 150,
-                    width: 150,
-                    child: Icon(Icons.camera_alt_outlined,size: 100,)
-                  ),
+                      ),
+                      height: 150,
+                      width: 150,
+                      child: Icon(
+                        Icons.camera_alt_outlined,
+                        size: 100,
+                      )),
                 ),
               ),
               Text('Click from camera'),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20,20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: InkWell(
                   borderRadius: BorderRadius.all(Radius.circular(30)),
-                  onTap: ()async{
-                    var img=await pick(ImageSource.gallery);
-                var output=await classify(img);
-                setState(() {
-                  w=output[0]["label"].toString();
-                });
-                Navigator.of(context).pushNamedAndRemoveUntil('/check/', (route) => false);
+                  onTap: () async {
+                    var img = await pickGallery();
+                    var output = await classify(img);
+                    setState(() {
+                      w = output[0]["label"].toString();
+                      for (int i = 0; i < labels.length; i++) {
+                        if (w == labels[i]) {
+                          contentIndex = i;
+                        }
+                      }
+                      print(contentIndex);
+                    });
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/check/', (route) => false);
                   },
                   child: Container(
-                    decoration: BoxDecoration(
-                       color: Colors.grey.shade100.withOpacity(0.5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100.withOpacity(0.5),
                         borderRadius: BorderRadius.all(Radius.circular(30)),
-                    ),
-                    height: 150,
-                    width: 150,
-                    child: Icon(Icons.broken_image_outlined,size: 100,)
-                  ),
+                      ),
+                      height: 150,
+                      width: 150,
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 100,
+                      )),
                 ),
               ),
-                const Text('Select from Gallery',
+              const Text(
+                'Select from Gallery',
                 style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold
-                  ),
-                ),
-                             
+                    fontSize: 15,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -190,6 +233,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
-
-
